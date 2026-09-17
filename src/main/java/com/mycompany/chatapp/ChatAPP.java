@@ -15,6 +15,8 @@ public class ChatAPP {
         Scanner scanner = new Scanner(System.in);
         Login login = new Login();
 
+        /*Oracle, 2026. Pattern (Java SE 24 & JDK 24). [Online]. Available at: https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/regex/Pattern.html [Accessed 17 September 2026]. 
+        */
         System.out.println("======================================");
         System.out.println("      PROG5121 CHAT APP - PART 1      ");
         System.out.println("       REGISTRATION AND LOGIN         ");
