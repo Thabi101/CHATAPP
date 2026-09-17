@@ -15,7 +15,8 @@ import org.junit.jupiter.api.Test;
  * @author Student
  */
 public class LoginTest {
-    
+    /* Bechtold, S., Brannen, S., Link, J., Merdes, M., Philipp, M., de Rancourt, J. and Stein, C., 2025. JUnit 5 user guide. [Online]. Available at: https://docs.junit.org/5.13.2/user-guide/ [Accessed 17 September 2026].
+*/
      private Login login;
     private String cellPhoneNumber;
 
