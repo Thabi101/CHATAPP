@@ -17,6 +17,9 @@ public class ChatAPP {
 
         /*Oracle, 2026. Pattern (Java SE 24 & JDK 24). [Online]. Available at: https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/regex/Pattern.html [Accessed 17 September 2026]. 
         */
+   /*Satzinger, J.W., Jackson, R.B. and Burd, S.D., 2016. Systems analysis and design in a changing world. 7th ed. Boston, MA: Cengage Learning.
+        
+        */
         System.out.println("======================================");
         System.out.println("      PROG5121 CHAT APP - PART 1      ");
         System.out.println("       REGISTRATION AND LOGIN         ");
