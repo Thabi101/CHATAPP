@@ -4,6 +4,9 @@
 
 package com.mycompany.chatapp;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 /**
@@ -11,7 +14,7 @@ import java.util.Scanner;
  * @author Student
  */
 public class ChatAPP {
-        public static void main(String[] args, String cellPhoneNumber) {
+        public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         Login login = new Login();
 
@@ -41,7 +44,8 @@ public class ChatAPP {
 
         System.out.println("Enter South African cell phone number (+27...): ");
         login.setCellPhoneNumber(scanner.nextLine().trim());
-
+        
+        // Validate individual fields and output required specific messages
         if (!login.checkUserName()) {
             System.out.println("Username is not correctly formatted; please ensure that your username contains an underscore and is no more than five characters in length.");
         } else {
@@ -54,12 +58,13 @@ public class ChatAPP {
             System.out.println("Password successfully captured.");
         }
 
-        if (!login.checkCellPhoneNumber(cellPhoneNumber)) {
+        if (!login.checkCellPhoneNumber(login.getCellPhoneNumber())) {
             System.out.println("Cell phone number incorrectly formatted or does not contain international code.");
         } else {
             System.out.println("Cell phone number successfully added.");
         }
 
+        // Check overall registration status
         String registrationStatus = login.registerUser();
 
         if (!registrationStatus.equals("Registration successful.")) {
@@ -81,6 +86,74 @@ public class ChatAPP {
         boolean loginSuccessful = login.loginUser(enteredUsername, enteredPassword);
         System.out.println(login.returnLoginStatus(loginSuccessful));
 
+        if (!loginSuccessful) {
+            scanner.close();
+            return;
+        }
+
+        // ==========================================
+        // PART 2: SENDING MESSAGES TRANSITION
+        // ==========================================
+        System.out.println("\nWelcome to QuickChat.");
+        
+        System.out.println("How many messages would you like to enter?");
+        int totalMessagesToEnter = 0;
+        try {
+            totalMessagesToEnter = Integer.parseInt(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid number format. Exiting.");
+            scanner.close();
+            return;
+        }
+
+        Path jsonFile = Paths.get("messages.json");
+
+        for (int i = 0; i < totalMessagesToEnter; i++) {
+            System.out.println("\n--- Enter Message " + (i + 1) + " ---");
+            
+            System.out.println("Enter recipient cell phone number (+27...): ");
+            String recipient = scanner.nextLine().trim();
+            
+            Message tempMsgForValidation = new Message(recipient, "temp", i);
+            if (!tempMsgForValidation.checkRecipientCell()) {
+                System.out.println("Cell phone number incorrectly formatted or does not contain international code. Please retry this message.");
+                i--; // Repeat this loop iteration
+                continue;
+            }
+
+            System.out.println("Enter message text (max 250 characters): ");
+            String messageText = scanner.nextLine().trim();
+            
+            Message message = new Message(recipient, messageText, i);
+            if (!message.checkMessageLength()) {
+                System.out.println("Message exceeds 250 characters or is blank. Please retry.");
+                i--; // Repeat this loop iteration
+                continue;
+            }
+
+            System.out.println("\n" + message.printMessage());
+            
+            boolean validChoice = false;
+            while (!validChoice) {
+                System.out.println("\nChoose an option:");
+                System.out.println("1) Send Messages (or type 'send')");
+                System.out.println("2) Show recently sent messages - Coming Soon (or type 'disregard')");
+                System.out.println("3) Store message in JSON (or type 'store')");
+                System.out.println("Enter your choice: ");
+                String choice = scanner.nextLine().trim();
+
+                try {
+                    String result = message.sendMessage(choice, jsonFile);
+                    System.out.println(result);
+                    validChoice = true;
+                } catch (IOException e) {
+                    System.out.println("An error occurred while processing your choice: " + e.getMessage());
+                }
+            }
+        }
+
+        System.out.println("\nTotal messages processed successfully: " + Message.returnTotalMessages());
+        System.out.println("Exiting QuickChat. Goodbye!");
         scanner.close();
     }
 }
