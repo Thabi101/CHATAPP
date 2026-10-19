@@ -23,7 +23,10 @@ public final class Message {
     private final String messageText;
     private final String messageHash;
     private String status;
-
+    
+/* Google (n.d.) Gson User Guide. Available at: https://github.com/google/gson/blob/main/UserGuide.md (Accessed: 19 October 2026). 
+    */
+    
     public Message(String recipient, String messageText, int messageNumber) {
         this.messageID = generateMessageID();
         this.recipient = recipient == null ? "" : recipient.trim();
