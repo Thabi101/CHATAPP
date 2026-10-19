@@ -25,6 +25,8 @@ public final class Message {
     private String status;
     
 /* Google (n.d.) Gson User Guide. Available at: https://github.com/google/gson/blob/main/UserGuide.md (Accessed: 19 October 2026). 
+
+2. Apache Maven Project (n.d.) Introduction to the Dependency Mechanism. Available at: https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html (Accessed: 19 October 2026).
     */
     
     public Message(String recipient, String messageText, int messageNumber) {
