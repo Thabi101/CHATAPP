@@ -139,6 +139,22 @@ public class LoginTest {
         String correctCellPhoneNumber = "+27838968976";
         assertTrue(login.checkCellPhoneNumber(correctCellPhoneNumber));
     }
+    @Test
+    void testEmptyPasswordFailsComplexity() {
+        login.setPassword("");
+        assertFalse(login.checkPasswordComplexity());
+    }
+
+    @Test
+    void testNullUsernameFailsValidation() {
+        login.setUsername(null);
+        assertFalse(login.checkUserName());
+    }
+
+    @Test
+    void testNullCellPhoneFailsValidation() {
+        assertFalse(login.checkCellPhoneNumber(null));
+    }
 
     @Test
     void testCellPhoneIncorrectlyFormatted() {
