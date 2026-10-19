@@ -6,7 +6,10 @@ import java.nio.file.Path;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+/*
+JUnit Team (n.d.) JUnit 5 User Guide. Available at: https://docs.junit.org/5.13.1/user-guide/index.html (Accessed: 19 October 2026).
 
+*/
 class MessageTest {
     @TempDir Path tempDir;
 
