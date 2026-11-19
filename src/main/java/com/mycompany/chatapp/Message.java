@@ -3,6 +3,7 @@ package com.mycompany.chatapp;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -12,87 +13,128 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Represents one chat message and provides validation, hash, display and JSON storage. */
+/**
+ * Represents one message and provides validation, hashing, display and JSON storage.
+ *
+ * JSON serialisation and deserialisation adapted from the official Google Gson User Guide:
+ * Google (2024) Gson User Guide - Serializing and Deserializing Collection with TypeToken.
+ * Available at: https://github.com/google/gson/blob/main/UserGuide.md (Accessed: 19 November 2026).
+ */
 public final class Message {
     private static int totalMessages = 0;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Type MESSAGE_LIST_TYPE = new TypeToken<List<Message>>() {}.getType();
+    private static final Type MESSAGE_LIST_TYPE = new TypeToken<List<Message>>() { }.getType();
 
-    private final String messageID;
-    private final String recipient;
-    private final String messageText;
-    private final String messageHash;
+    private String messageID;
+    private String sender;
+    private String recipient;
+    private String messageText;
+    private String messageHash;
     private String status;
-    
-/* Google (n.d.) Gson User Guide. Available at: https://github.com/google/gson/blob/main/UserGuide.md (Accessed: 19 October 2026). 
+    private boolean countedAsSent;
 
-2. Apache Maven Project (n.d.) Introduction to the Dependency Mechanism. Available at: https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html (Accessed: 19 October 2026).
-    */
-    
+    /** Default no-arg constructor required by Gson for JSON deserialisation. */
+    public Message() {
+        this("", "", 0, generateMessageID());
+    }
+
     public Message(String recipient, String messageText, int messageNumber) {
-        this.messageID = generateMessageID();
+        this(recipient, messageText, messageNumber, generateMessageID());
+    }
+
+    /**
+     * Constructor with a known ID for deterministic unit tests.
+     *
+     * @param recipient     recipient cell number
+     * @param messageText   message content (1–250 characters)
+     * @param messageNumber sequential message number
+     * @param messageID     10-digit unique message identifier
+     */
+    public Message(String recipient, String messageText, int messageNumber, String messageID) {
+        this.messageID = messageID == null ? "" : messageID.trim();
         this.recipient = recipient == null ? "" : recipient.trim();
         this.messageText = messageText == null ? "" : messageText.trim();
         this.messageHash = createMessageHash(messageNumber);
         this.status = "Created";
+        this.sender = "";
+        this.countedAsSent = false;
     }
 
     private static String generateMessageID() {
-        // Generate a ten-digit numeric ID; first digit is never zero.
-        return Long.toString(ThreadLocalRandom.current().nextLong(1_000_000_000L, 10_000_000_000L));
+        return Long.toString(ThreadLocalRandom.current()
+                .nextLong(1_000_000_000L, 10_000_000_000L));
     }
 
-    public boolean checkMessageID() { return messageID != null && messageID.matches("[0-9]{1,10}"); }
+    public boolean checkMessageID() {
+        return messageID != null && messageID.matches("[0-9]{10}");
+    }
 
     public boolean checkRecipientCell() {
-        // Part 1's South African format is +27 followed by nine digits.
-        return recipient.matches("^\\+27[0-9]{9}$");
+        return recipient != null && recipient.matches("^\\+27[0-9]{9}$");
     }
 
-    public boolean checkMessageLength() { return !messageText.isBlank() && messageText.length() <= 250; }
+    public boolean checkMessageLength() {
+        return messageText != null && !messageText.isBlank()
+                && messageText.length() <= 250;
+    }
 
+    /**
+     * Hash format: first two ID digits:message number:first word + last word.
+     * Punctuation is removed and the result is uppercase.
+     *
+     * @param messageNumber sequential message count
+     * @return formatted uppercase message hash
+     */
     public String createMessageHash(int messageNumber) {
+        if (messageID == null || messageID.length() < 2
+                || messageText == null || messageText.isBlank()) {
+            return "";
+        }
         String[] words = messageText.trim().split("\\s+");
-        String first = words.length == 0 || words[0].isBlank() ? "" : words[0];
-        String last = words.length == 0 || words[words.length - 1].isBlank() ? "" : words[words.length - 1];
-        String idPrefix = messageID == null ? "" : messageID.substring(0, Math.min(2, messageID.length()));
-        return (idPrefix + ":" + messageNumber + ":" + first + last).toUpperCase();
+        String first = words[0].replaceAll("[^A-Za-z0-9]", "");
+        String last = words[words.length - 1].replaceAll("[^A-Za-z0-9]", "");
+        return (messageID.substring(0, 2) + ":" + messageNumber + ":"
+                + first + last).toUpperCase();
     }
 
-    /** Marks a message as sent, disregarded, or stored. Only sent messages increase the total.
-     * @param choice
-     * @param jsonFile
-     * @return 
-     * @throws java.io.IOException */
-   /** Marks a message as sent, disregarded, or stored. Only sent messages increase the total.
-     * @param choice
-     * @param jsonFile
-     * @return 
-     * @throws java.io.IOException */
+    /**
+     * Processes the user's send, disregard, or store selection.
+     *
+     * @param choice   user selection ("send"/"1", "disregard"/"2", or "store"/"3")
+     * @param jsonFile path to the JSON storage file
+     * @return confirmation status message
+     * @throws IOException if writing to the JSON file fails
+     */
     public String sendMessage(String choice, Path jsonFile) throws IOException {
-        if (choice == null) return "Invalid choice. Select send, disregard, or store.";
-        
-        String formattedChoice = choice.trim().toLowerCase();
-        
-        switch (formattedChoice) {
-            case "send", "1", "sent" -> {
+        if (choice == null) {
+            return "Invalid choice. Select send, disregard, or store.";
+        }
+
+        switch (choice.trim().toLowerCase()) {
+            case "send":
+            case "1":
+            case "sent":
+                if (!countedAsSent) {
+                    totalMessages++;
+                    countedAsSent = true;
+                }
                 status = "Sent";
-                totalMessages++;
                 return "Message sent.";
-            }
-            case "disregard", "2", "discard" -> {
+
+            case "disregard":
+            case "2":
+            case "discard":
                 status = "Disregarded";
                 return "Message disregarded.";
-            }
-            case "store", "3" -> {
+
+            case "store":
+            case "3":
                 status = "Stored";
                 storeMessage(jsonFile);
-                return "Message successfully stored in JSON.";
-            }
-                
-            default -> {
+                return "Message successfully stored.";
+
+            default:
                 return "Invalid choice. Select send, disregard, or store.";
-            }
         }
     }
 
@@ -104,22 +146,69 @@ public final class Message {
                 + "Status: " + status;
     }
 
-    public static int returnTotalMessages() { return totalMessages; }
+    public static int returnTotalMessages() {
+        return totalMessages;
+    }
 
-    /** Appends this message to a JSON array, preserving previously stored messages.
-     * @param jsonFile
-     * @throws java.io.IOException */
+    /**
+     * Appends the current message to the JSON file using Google Gson.
+     * Attribution: Adapted from Google Gson User Guide (Google, 2024).
+     *
+     * @param jsonFile path to the JSON file
+     * @throws IOException if file I/O fails
+     */
     public void storeMessage(Path jsonFile) throws IOException {
-        List<Message> messages = new ArrayList<>();
-        if (Files.exists(jsonFile) && Files.size(jsonFile) > 0) {
-            String existing = Files.readString(jsonFile, StandardCharsets.UTF_8);
-            List<Message> loaded = GSON.fromJson(existing, MESSAGE_LIST_TYPE);
-            if (loaded != null) messages.addAll(loaded);
+        if (jsonFile == null) {
+            throw new IllegalArgumentException("JSON file path cannot be null.");
         }
+        List<Message> messages = readMessages(jsonFile);
         messages.add(this);
+        writeMessages(jsonFile, messages);
+    }
+
+    /**
+     * Reads stored messages from a JSON file into a dynamic List/array using Google Gson.
+     * Attribution: Adapted from Google Gson User Guide (Google, 2024),
+     * https://github.com/google/gson/blob/main/UserGuide.md
+     *
+     * @param jsonFile path to the JSON file
+     * @return list of deserialised Message objects
+     * @throws IOException if file reading fails
+     */
+    public static List<Message> readMessages(Path jsonFile) throws IOException {
+        if (jsonFile == null || !Files.exists(jsonFile) || Files.size(jsonFile) == 0) {
+            return new ArrayList<>();
+        }
+        String json = Files.readString(jsonFile, StandardCharsets.UTF_8);
+        List<Message> loaded = GSON.fromJson(json, MESSAGE_LIST_TYPE);
+        return loaded == null ? new ArrayList<>() : new ArrayList<>(loaded);
+    }
+
+    /**
+     * Writes a list of messages to a JSON file using Google Gson pretty printing.
+     * Attribution: Adapted from Google Gson User Guide (Google, 2024).
+     *
+     * @param jsonFile path to the JSON file
+     * @param messages list of messages to serialise
+     * @throws IOException if file writing fails
+     */
+    public static void writeMessages(Path jsonFile, List<Message> messages) throws IOException {
+        if (jsonFile == null) {
+            throw new IllegalArgumentException("JSON file path cannot be null.");
+        }
         Path parent = jsonFile.toAbsolutePath().getParent();
-        if (parent != null) Files.createDirectories(parent);
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
         Files.writeString(jsonFile, GSON.toJson(messages, MESSAGE_LIST_TYPE), StandardCharsets.UTF_8);
+    }
+
+    public void deleteMessage() {
+        if (countedAsSent && totalMessages > 0) {
+            totalMessages--;
+            countedAsSent = false;
+        }
+        status = "Deleted";
     }
 
     public String getMessageID() { return messageID; }
@@ -127,4 +216,8 @@ public final class Message {
     public String getMessageText() { return messageText; }
     public String getMessageHash() { return messageHash; }
     public String getStatus() { return status; }
+    public String getSender() { return sender; }
+    public void setSender(String sender) { this.sender = sender == null ? "" : sender.trim(); }
+    public boolean isCountedAsSent() { return countedAsSent; }
+    public void setStatus(String status) { this.status = status; }
 }
