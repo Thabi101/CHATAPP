@@ -14,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * and additional report/search enhancements.
  
  * JUnit Team, 2024. JUnit 5 User Guide. [online] Available at: https://junit.org/junit5/docs/current/user-guide/ [Accessed 19 November 2026].
+ 
+ * Oracle, 2024a. Java Platform, Standard Edition & Java Development Kit Version 21 API Specification: Class ArrayList. [online] Available at: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayList.html [Accessed 19 November 2026].
  */
 class MessageManagerTest {
     @TempDir

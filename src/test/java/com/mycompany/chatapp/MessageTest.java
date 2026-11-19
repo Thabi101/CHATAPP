@@ -6,6 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
+/*
+Oracle, 2024a. Java Platform, Standard Edition & Java Development Kit Version 21 API Specification: Class ArrayList. [online] Available at: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayList.html [Accessed 19 November 2026].
+Oracle, 2024b. Java Platform, Standard Edition & Java Development Kit Version 21 API Specification: Class Files. [online] Available at: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/file/Files.html [Accessed 19 November 2026].
+*/
 class MessageTest {
     @TempDir Path tempDir;
 
