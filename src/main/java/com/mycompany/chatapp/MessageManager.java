@@ -9,6 +9,8 @@ import java.util.List;
 /**
  * Part 3 message-management layer. Dynamically populates parallel lists for
  * sent, disregarded, and stored messages, message hashes, and message IDs.
+ 
+ * Farrell, J., 2023. Java Programming. 10th ed. Boston: Cengage Learning
  */
 public class MessageManager {
     private final Path jsonFile;
