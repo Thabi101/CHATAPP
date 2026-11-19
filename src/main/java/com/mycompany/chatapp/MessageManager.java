@@ -124,6 +124,8 @@ public class MessageManager {
      * Requirement 2b: Find the longest message among sent and stored messages.
      *
      * @return longest Message object, or null if none exist
+     
+     * Google, 2024. Gson User Guide: Serializing and Deserializing Collection with TypeToken. [online] Available at: https://github.com/google/gson/blob/main/UserGuide.md [Accessed 19 November 2026].
      */
     public Message findLongestMessage() {
         Message longest = null;
