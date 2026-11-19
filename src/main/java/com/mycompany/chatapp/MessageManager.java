@@ -11,6 +11,8 @@ import java.util.List;
  * sent, disregarded, and stored messages, message hashes, and message IDs.
  
  * Farrell, J., 2023. Java Programming. 10th ed. Boston: Cengage Learning
+ 
+ * GitHub, 2024. Building and testing Java with Maven. [online] Available at: https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-java-with-maven [Accessed 19 November 2026].
  */
 public class MessageManager {
     private final Path jsonFile;
