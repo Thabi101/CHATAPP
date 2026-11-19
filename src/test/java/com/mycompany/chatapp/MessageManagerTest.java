@@ -12,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for Part 3 using the official PROG5121 POE Test Data (Messages 1-5)
  * and additional report/search enhancements.
+ 
+ * JUnit Team, 2024. JUnit 5 User Guide. [online] Available at: https://junit.org/junit5/docs/current/user-guide/ [Accessed 19 November 2026].
  */
 class MessageManagerTest {
     @TempDir
