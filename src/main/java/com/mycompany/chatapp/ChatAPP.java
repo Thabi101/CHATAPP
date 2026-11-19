@@ -12,6 +12,15 @@ import java.util.Scanner;
 /**
  * Main console application for PROG5121 QuickChat Parts 1, 2 and 3.
  */
+/*
+/**
+ * Reads stored messages from a JSON file into a dynamic List using Google Gson.
+ *
+ * Reference (IIE Harvard Anglia):
+ * Google, 2024. Gson User Guide: Serializing and Deserializing Collection with TypeToken.
+ * [online] Available at: <https://github.com/google/gson/blob/main/UserGuide.md>
+ * [Accessed 19 November 2026].
+ */
 public class ChatAPP {
     private static final Path JSON_FILE = Path.of("messages.json");
 

@@ -14,18 +14,24 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Represents one message and provides validation, hashing, display and JSON storage.
+ * Represents a single QuickChat message with validation, hashing, display, and JSON storage.
  *
- * JSON serialisation and deserialisation adapted from the official Google Gson User Guide:
- * Google (2024) Gson User Guide - Serializing and Deserializing Collection with TypeToken.
- * Available at: https://github.com/google/gson/blob/main/UserGuide.md (Accessed: 19 November 2026).
+ * Reference (IIE Harvard Anglia):
+ * Google, 2024. Gson User Guide: Serializing and Deserializing Collection with TypeToken.
+ * [online] Available at: <https://github.com/google/gson/blob/main/UserGuide.md>
+ * [Accessed 19 November 2026].
  */
 public final class Message {
+    public static final int MAX_MESSAGE_LENGTH = 250;
+    private static final String MESSAGE_ID_REGEX = "[0-9]{10}";
+    private static final String SA_RECIPIENT_REGEX = "^\\+27[0-9]{9}$";
+
     private static int totalMessages = 0;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Type MESSAGE_LIST_TYPE = new TypeToken<List<Message>>() { }.getType();
 
     private String messageID;
+    private int messageNumber;
     private String sender;
     private String recipient;
     private String messageText;
@@ -43,15 +49,16 @@ public final class Message {
     }
 
     /**
-     * Constructor with a known ID for deterministic unit tests.
+     * Constructor with a known ID for deterministic unit testing.
      *
      * @param recipient     recipient cell number
-     * @param messageText   message content (1–250 characters)
+     * @param messageText   message body (1–250 characters)
      * @param messageNumber sequential message number
      * @param messageID     10-digit unique message identifier
      */
     public Message(String recipient, String messageText, int messageNumber, String messageID) {
         this.messageID = messageID == null ? "" : messageID.trim();
+        this.messageNumber = messageNumber;
         this.recipient = recipient == null ? "" : recipient.trim();
         this.messageText = messageText == null ? "" : messageText.trim();
         this.messageHash = createMessageHash(messageNumber);
@@ -66,25 +73,19 @@ public final class Message {
     }
 
     public boolean checkMessageID() {
-        return messageID != null && messageID.matches("[0-9]{10}");
+        return messageID != null && messageID.matches(MESSAGE_ID_REGEX);
     }
 
     public boolean checkRecipientCell() {
-        return recipient != null && recipient.matches("^\\+27[0-9]{9}$");
+        return recipient != null && recipient.matches(SA_RECIPIENT_REGEX);
     }
 
     public boolean checkMessageLength() {
-        return messageText != null && !messageText.isBlank()
-                && messageText.length() <= 250;
+        return messageText != null
+                && !messageText.isBlank()
+                && messageText.length() <= MAX_MESSAGE_LENGTH;
     }
 
-    /**
-     * Hash format: first two ID digits:message number:first word + last word.
-     * Punctuation is removed and the result is uppercase.
-     *
-     * @param messageNumber sequential message count
-     * @return formatted uppercase message hash
-     */
     public String createMessageHash(int messageNumber) {
         if (messageID == null || messageID.length() < 2
                 || messageText == null || messageText.isBlank()) {
@@ -97,14 +98,6 @@ public final class Message {
                 + first + last).toUpperCase();
     }
 
-    /**
-     * Processes the user's send, disregard, or store selection.
-     *
-     * @param choice   user selection ("send"/"1", "disregard"/"2", or "store"/"3")
-     * @param jsonFile path to the JSON storage file
-     * @return confirmation status message
-     * @throws IOException if writing to the JSON file fails
-     */
     public String sendMessage(String choice, Path jsonFile) throws IOException {
         if (choice == null) {
             return "Invalid choice. Select send, disregard, or store.";
@@ -151,11 +144,8 @@ public final class Message {
     }
 
     /**
-     * Appends the current message to the JSON file using Google Gson.
-     * Attribution: Adapted from Google Gson User Guide (Google, 2024).
-     *
-     * @param jsonFile path to the JSON file
-     * @throws IOException if file I/O fails
+     * Appends this message to the JSON storage file using Google Gson.
+     * Attribution: Google (2024), https://github.com/google/gson/blob/main/UserGuide.md
      */
     public void storeMessage(Path jsonFile) throws IOException {
         if (jsonFile == null) {
@@ -167,13 +157,8 @@ public final class Message {
     }
 
     /**
-     * Reads stored messages from a JSON file into a dynamic List/array using Google Gson.
-     * Attribution: Adapted from Google Gson User Guide (Google, 2024),
-     * https://github.com/google/gson/blob/main/UserGuide.md
-     *
-     * @param jsonFile path to the JSON file
-     * @return list of deserialised Message objects
-     * @throws IOException if file reading fails
+     * Reads stored messages from a JSON file into a dynamic List using Google Gson.
+     * Attribution: Google (2024), https://github.com/google/gson/blob/main/UserGuide.md
      */
     public static List<Message> readMessages(Path jsonFile) throws IOException {
         if (jsonFile == null || !Files.exists(jsonFile) || Files.size(jsonFile) == 0) {
@@ -185,12 +170,8 @@ public final class Message {
     }
 
     /**
-     * Writes a list of messages to a JSON file using Google Gson pretty printing.
-     * Attribution: Adapted from Google Gson User Guide (Google, 2024).
-     *
-     * @param jsonFile path to the JSON file
-     * @param messages list of messages to serialise
-     * @throws IOException if file writing fails
+     * Serialises a list of messages to a JSON file using Google Gson pretty printing.
+     * Attribution: Google (2024), https://github.com/google/gson/blob/main/UserGuide.md
      */
     public static void writeMessages(Path jsonFile, List<Message> messages) throws IOException {
         if (jsonFile == null) {
@@ -212,6 +193,7 @@ public final class Message {
     }
 
     public String getMessageID() { return messageID; }
+    public int getMessageNumber() { return messageNumber; }
     public String getRecipient() { return recipient; }
     public String getMessageText() { return messageText; }
     public String getMessageHash() { return messageHash; }

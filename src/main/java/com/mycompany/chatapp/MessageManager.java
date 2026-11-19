@@ -20,6 +20,7 @@ public class MessageManager {
     private final List<Message> storedMessages = new ArrayList<>();
     private final List<String> messageHashes = new ArrayList<>();
     private final List<String> messageIDs = new ArrayList<>();
+    private int highestMessageNumber = 0;
 
     public MessageManager(Path jsonFile) throws IOException {
         this.jsonFile = jsonFile;
@@ -33,10 +34,31 @@ public class MessageManager {
                 storedMessages.add(message);
                 messageHashes.add(message.getMessageHash());
                 messageIDs.add(message.getMessageID());
+                if (message.getMessageNumber() > highestMessageNumber) {
+                    highestMessageNumber = message.getMessageNumber();
+                }
             }
         }
     }
 
+    /**
+     * Returns the next sequential message number, preserving continuity across sessions.
+     *
+     * @return next message number
+     */
+    public int getNextMessageNumber() {
+        highestMessageNumber++;
+        return highestMessageNumber;
+    }
+
+    /**
+     * Processes a message according to user selection and updates all tracking arrays.
+     *
+     * @param message message to process
+     * @param choice  user action choice
+     * @return confirmation response string
+     * @throws IOException if JSON file persistence fails
+     */
     public String processMessage(Message message, String choice) throws IOException {
         String response = message.sendMessage(choice, jsonFile);
         if (!response.startsWith("Invalid choice")) {
@@ -45,6 +67,9 @@ public class MessageManager {
                 allMessages.add(message);
                 messageHashes.add(message.getMessageHash());
                 messageIDs.add(message.getMessageID());
+            }
+            if (message.getMessageNumber() > highestMessageNumber) {
+                highestMessageNumber = message.getMessageNumber();
             }
             switch (message.getStatus()) {
                 case "Sent" -> sentMessages.add(message);
@@ -71,6 +96,20 @@ public class MessageManager {
 
     private void persistStoredMessages() throws IOException {
         Message.writeMessages(jsonFile, storedMessages);
+    }
+
+    /**
+     * Normalises South African phone numbers so 083... and +2783... match reliably.
+     */
+    private String normalizePhone(String number) {
+        if (number == null) {
+            return "";
+        }
+        String trimmed = number.trim();
+        if (trimmed.matches("^0[0-9]{9}$")) {
+            return "+27" + trimmed.substring(1);
+        }
+        return trimmed;
     }
 
     public List<Message> getAllMessages() { return Collections.unmodifiableList(allMessages); }
@@ -158,19 +197,41 @@ public class MessageManager {
 
     /**
      * Requirement 2d: Search for all messages sent or stored for a particular recipient.
+     * Supports matching both +27 and local 0-prefixed formats.
      *
      * @param recipient recipient cell number
      * @return list of matching sent or stored messages
      */
     public List<Message> searchByRecipient(String recipient) {
+        String target = normalizePhone(recipient);
         List<Message> matches = new ArrayList<>();
         for (Message message : sentMessages) {
-            if (message.getRecipient().equals(recipient)) {
+            if (normalizePhone(message.getRecipient()).equals(target)) {
                 matches.add(message);
             }
         }
         for (Message message : storedMessages) {
-            if (message.getRecipient().equals(recipient) && !matches.contains(message)) {
+            if (normalizePhone(message.getRecipient()).equals(target) && !matches.contains(message)) {
+                matches.add(message);
+            }
+        }
+        return matches;
+    }
+
+    /**
+     * Value-add feature: Case-insensitive keyword search across all active messages.
+     *
+     * @param keyword text substring to search for
+     * @return matching messages
+     */
+    public List<Message> searchByKeyword(String keyword) {
+        List<Message> matches = new ArrayList<>();
+        if (keyword == null || keyword.isBlank()) {
+            return matches;
+        }
+        String query = keyword.trim().toLowerCase();
+        for (Message message : allMessages) {
+            if (message.getMessageText().toLowerCase().contains(query)) {
                 matches.add(message);
             }
         }
@@ -231,15 +292,23 @@ public class MessageManager {
         return out.toString();
     }
 
-    int getNextMessageNumber() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
+    /**
+     * Value-add feature: Generates summary analytics across all processed messages.
+     *
+     * @return formatted statistics summary
+     */
+    public String getStatisticsSummary() {
+        int total = allMessages.size();
+        double avgLength = allMessages.stream()
+                .mapToInt(m -> m.getMessageText().length())
+                .average()
+                .orElse(0.0);
 
-    List<Message> searchByKeyword(String nextLine) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    boolean getStatisticsSummary() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return "=== QUICKCHAT ANALYTICS SUMMARY ===" + System.lineSeparator()
+                + "Total Processed:   " + total + System.lineSeparator()
+                + "Sent Messages:     " + sentMessages.size() + System.lineSeparator()
+                + "Stored Messages:   " + storedMessages.size() + System.lineSeparator()
+                + "Disregarded:       " + disregardedMessages.size() + System.lineSeparator()
+                + String.format("Average Length:    %.1f characters", avgLength);
     }
 }
